@@ -25,13 +25,15 @@ public class Animation extends PApplet {
 	Table table;
 	Map<Integer, List<Flow>> flows = new Hashtable<Integer, List<Flow>>();
 
-	int endYear = 2013;
+	int endYear = 1965;//2013
 	int startYear = 1960;
 	int currentYear = startYear;
 	int resolution = 0;
 	int sizeFlows = 0;
 	int increment=0;
 	int maxTrip = 0;
+	
+	boolean animating = true;
 	
 	class Flow{
 		public PVector begin;
@@ -52,7 +54,7 @@ public class Animation extends PApplet {
 		mercatorMap = new MercatorMap(width, height, lat2, lat1, lon1, lon2);
 		
 		for (int year = startYear; year <= endYear; year++) {
-			table = loadTable("data/lattes-flows-country-"+year+".csv", "header");
+			table = loadTable("data/flows/lattes-flows-country-"+year+".csv", "header");
 			List<Flow> flowsByYear = new ArrayList<Flow>();
 			float x,y;
 			for (TableRow row : table.rows()) {
@@ -80,11 +82,14 @@ public class Animation extends PApplet {
 		String content = "Year "+currentYear;
 		text(content, width/2-textWidth(content)/2, 45, 30);
 		
-		for(Flow f: flows.get(currentYear)){
-			sizeFlows = flows.get(currentYear).size();
-			myCurve(f);
-			if(currentYear == endYear)
-				break;
+		int flag = 0;
+		if(animating){
+			for(Flow f: flows.get(currentYear)){
+				flag++;
+				sizeFlows = flows.get(currentYear).size();
+				myCurve(f);
+			}
+			saveFrame("data/frames/######.tif");
 		}
 	}
 
@@ -94,7 +99,7 @@ public class Animation extends PApplet {
 		stroke(255,0,0,200);
 		strokeWeight(1);
 		if (increment == 1){
-			resolution = sizeFlows*50;
+			resolution = sizeFlows*20;//50
 		}
 		int step = (int) (resolution*0.8);
 		if (increment<=resolution+step){
@@ -102,7 +107,6 @@ public class Animation extends PApplet {
 			int endValue = (increment > resolution)? resolution : increment;
 			int startValue = (increment-step)<0 ? 0 : increment-step; 
 
-			//curve
 			for (int i=startValue; i<endValue;i++){ //0..endValue
 				float t1 = i / (float)resolution;
 				float t2 = (i+1)/ (float)resolution;
@@ -118,7 +122,12 @@ public class Animation extends PApplet {
 			}
 		}
 		if (increment == resolution+step){
-			currentYear++;
+			if(currentYear == endYear){
+				animating = false;
+			}
+			if(currentYear != endYear){
+				currentYear++;
+			}
 			increment = 0;
 		}
 //		println(year+" "+size+" "+increment+" "+resolution);
