@@ -25,13 +25,15 @@ public class Animation extends PApplet {
 	Table table;
 	Map<Integer, List<Flow>> flows = new Hashtable<Integer, List<Flow>>();
 
-	int endYear = 1965;//2013
-	int startYear = 1960;
+	int endYear = 2013;//2013
+	int startYear = 1980;//1960
 	int currentYear = startYear;
 	int resolution = 0;
 	int sizeFlows = 0;
 	int increment=0;
-	int maxTrip = 0;
+	int maxTripSame = 0;
+	int maxTripDiff = 0;
+	int flag = 0;
 	
 	boolean animating = true;
 	
@@ -44,6 +46,10 @@ public class Animation extends PApplet {
 			this.begin = mercatorMap.getScreenLocation(new PVector(beginX, beginY));
 			this.end = mercatorMap.getScreenLocation(new PVector(endX, endY));
 			this.trips = trips;
+		}
+		
+		public boolean equalPoint(){
+			return (begin.x==end.x && begin.y==end.y)? true :false;
 		}
 	}
 
@@ -65,13 +71,17 @@ public class Animation extends PApplet {
 					row.getFloat("dY"),
 					row.getInt("trips")
 				);
-				if(row.getInt("trips") > maxTrip)
-					maxTrip = row.getInt("trips");
+				if(!flow.equalPoint() && (row.getInt("trips") > maxTripDiff)){
+					maxTripDiff = row.getInt("trips");
+				if(flow.equalPoint() && row.getInt("trips") > maxTripSame)
+					maxTripSame = row.getInt("trips");
+				}
+					
 				flowsByYear.add(flow);
 			}
 			flows.put(year, flowsByYear);
 		}
-		
+//		println(maxTripSame+" "+maxTripDiff);
 	}
 
 	public void draw() {
@@ -81,27 +91,28 @@ public class Animation extends PApplet {
 		fill(0, 102, 153, 204);
 		String content = "Year "+currentYear;
 		text(content, width/2-textWidth(content)/2, 45, 30);
-		
-		int flag = 0;
+		flag++;
 		if(animating){
 			for(Flow f: flows.get(currentYear)){
-				flag++;
 				sizeFlows = flows.get(currentYear).size();
 				myCurve(f);
 			}
-			saveFrame("data/frames/######.tif");
+//			if(flag%3 == 0)
+//				saveFrame("data/frames/######.png");
 		}
 	}
 
 	void myCurve(Flow flow) {
-//		float percentageTrip = flow.trips/(float)maxTrip;
-//		int alfa = (int)((255/2)+(255*percentageTrip/2));
-		stroke(255,0,0,200);
-		strokeWeight(1);
+		float percentageTrip = flow.trips/(float)maxTripDiff;
+		int alfa = (int)((255*2/10)+(((255*8)/10)*percentageTrip));
+		int strokeSize = (int)((3*2/10)+(((3*8)/10)*percentageTrip));
+		stroke(255,0,0,alfa);
+		strokeWeight(strokeSize+1);
 		if (increment == 1){
-			resolution = sizeFlows*20;//50
+			delay(1000);
+			resolution = sizeFlows*50;//30,50
 		}
-		int step = (int) (resolution*0.8);
+		int step = (int) (resolution*2);//3, 2, 0.8
 		if (increment<=resolution+step){
 			increment++;
 			int endValue = (increment > resolution)? resolution : increment;
@@ -110,11 +121,14 @@ public class Animation extends PApplet {
 			for (int i=startValue; i<endValue;i++){ //0..endValue
 				float t1 = i / (float)resolution;
 				float t2 = (i+1)/ (float)resolution;
-				//640,640 140,40 x 2 / 40,40x4 / 140,40x4
-				float x1 = curvePoint(flow.begin.x, flow.begin.x, flow.end.x, flow.end.x, t1); 
-				float y1 = curvePoint(flow.begin.y, flow.begin.y, flow.end.y, flow.end.y, t1);
-				float x2 = curvePoint(flow.begin.x, flow.begin.x, flow.end.x, flow.end.x, t2);
-				float y2 = curvePoint(flow.begin.y, flow.begin.y, flow.end.y, flow.end.y, t2);
+				//-640,0,0,-640 -140,0,0,-40 x 2 / -40,0,0,-40x4 / -140,0,0,-40x4
+				int direction = (flow.begin.x > flow.end.x) ? -1 : 1;
+				int offsetBegin = 140*direction;
+				int offsetEnd = 140*direction;
+				float x1 = curvePoint(flow.begin.x+offsetBegin, flow.begin.x, flow.end.x, flow.end.x+offsetEnd, t1); 
+				float y1 = curvePoint(flow.begin.y+offsetBegin, flow.begin.y, flow.end.y, flow.end.y+offsetEnd, t1);
+				float x2 = curvePoint(flow.begin.x+offsetBegin, flow.begin.x, flow.end.x, flow.end.x+offsetEnd, t2);
+				float y2 = curvePoint(flow.begin.y+offsetBegin, flow.begin.y, flow.end.y, flow.end.y+offsetEnd, t2);
 				//int size = (int) (3+1-3*(i/(float)endValue)); 
 				//ellipse(x1, y1, size, size);
 				//ellipse(x2, y2, size, size);
