@@ -26,13 +26,14 @@ public class Animation extends PApplet {
 	Map<Integer, List<Flow>> flows = new Hashtable<Integer, List<Flow>>();
 
 	int endYear = 2013;//2013
-	int startYear = 1980;//1960
+	int startYear = 2000;//1990, 1960, 1980
 	int currentYear = startYear;
 	int resolution = 0;
 	int sizeFlows = 0;
 	int increment=0;
 	int maxTripSame = 0;
 	int maxTripDiff = 0;
+	int maxDist = 0;
 	int flag = 0;
 	
 	boolean animating = true;
@@ -56,8 +57,9 @@ public class Animation extends PApplet {
 	public void setup() {
 		size( width, height, P3D );
 		
-		map = loadImage("data/ui/mapbox.light.world.png");
+		map = loadImage("data/ui/mapbox.light.world.1.png");
 		mercatorMap = new MercatorMap(width, height, lat2, lat1, lon1, lon2);
+		
 		
 		for (int year = startYear; year <= endYear; year++) {
 			table = loadTable("data/flows/lattes-flows-country-"+year+".csv", "header");
@@ -76,29 +78,41 @@ public class Animation extends PApplet {
 				if(flow.equalPoint() && row.getInt("trips") > maxTripSame)
 					maxTripSame = row.getInt("trips");
 				}
-					
+				if(maxDist<dist(flow.begin.x, flow.begin.y, flow.end.x, flow.end.y))
+					maxDist = (int)dist(flow.begin.x, flow.begin.y, flow.end.x, flow.end.y);
 				flowsByYear.add(flow);
 			}
 			flows.put(year, flowsByYear);
 		}
-//		println(maxTripSame+" "+maxTripDiff);
+//		println(maxTripSame+" "+maxTripDiff+" "+maxDist);
 	}
 
 	public void draw() {
+		background(209,209,209);
+		
+		if(currentYear <= endYear){
+			textSize(20);
+			fill(0, 102, 153, 204);
+			String content = "Year "+currentYear;
+			if(currentYear == endYear)
+				content = "";
+			text(content, width/2-textWidth(content)/2, 45, 30);
+		}
+		
+		scale((float) 0.75);
+		translate(100, 250);
+		rotateX(radians(40));
+		
 		image(map, 0 ,0);
 		
-		textSize(20);
-		fill(0, 102, 153, 204);
-		String content = "Year "+currentYear;
-		text(content, width/2-textWidth(content)/2, 45, 30);
 		flag++;
 		if(animating){
 			for(Flow f: flows.get(currentYear)){
 				sizeFlows = flows.get(currentYear).size();
 				myCurve(f);
 			}
-//			if(flag%3 == 0)
-//				saveFrame("data/frames/######.png");
+			//if(flag%3 == 0)
+				//saveFrame("data/frames/######.png");
 		}
 	}
 
@@ -110,7 +124,7 @@ public class Animation extends PApplet {
 		strokeWeight(strokeSize+1);
 		if (increment == 1){
 			delay(1000);
-			resolution = sizeFlows*50;//30,50
+			resolution = sizeFlows*25;//30,50
 		}
 		int step = (int) (resolution*2);//3, 2, 0.8
 		if (increment<=resolution+step){
@@ -121,17 +135,35 @@ public class Animation extends PApplet {
 			for (int i=startValue; i<endValue;i++){ //0..endValue
 				float t1 = i / (float)resolution;
 				float t2 = (i+1)/ (float)resolution;
-				//-640,0,0,-640 -140,0,0,-40 x 2 / -40,0,0,-40x4 / -140,0,0,-40x4
-				int direction = (flow.begin.x > flow.end.x) ? -1 : 1;
-				int offsetBegin = 140*direction;
-				int offsetEnd = 140*direction;
-				float x1 = curvePoint(flow.begin.x+offsetBegin, flow.begin.x, flow.end.x, flow.end.x+offsetEnd, t1); 
+				
+				float percentageDist = dist(flow.begin.x, flow.begin.y, flow.end.x, flow.end.y)/(float)maxDist;
+				percentageDist = (float) Math.pow(percentageDist, 2);
+				int dist = (int)((5000/20)+(((5000*19)/10)*percentageDist));
+				int direction = ((flow.begin.x > flow.end.x) && (flow.begin.y < flow.end.y)) ||
+									((flow.begin.x < flow.end.x) && (flow.begin.y > flow.end.y)) ?
+									+1/3 : -1/3;
+				int offsetBegin = dist;
+				int offsetEnd = dist;
+				int offsetXBegin = 500*direction;
+				int offsetYBegin = 500*direction;
+				float x1 = curvePoint(flow.begin.x+offsetXBegin, flow.begin.x, flow.end.x, flow.end.x+offsetYBegin, t1); 
 				float y1 = curvePoint(flow.begin.y+offsetBegin, flow.begin.y, flow.end.y, flow.end.y+offsetEnd, t1);
-				float x2 = curvePoint(flow.begin.x+offsetBegin, flow.begin.x, flow.end.x, flow.end.x+offsetEnd, t2);
+				float x2 = curvePoint(flow.begin.x+offsetXBegin, flow.begin.x, flow.end.x, flow.end.x+offsetYBegin, t2);
 				float y2 = curvePoint(flow.begin.y+offsetBegin, flow.begin.y, flow.end.y, flow.end.y+offsetEnd, t2);
+				
+				//-640,0,0,-640 -140,0,0,-40 x 2 / -40,0,0,-40x4 / -140,0,0,-40x4 / -140,0,0,-140x4
+				//int direction = (flow.begin.x > flow.end.x) ? -1 : 1;
+				//int offsetBegin = 640*direction;
+				//int offsetEnd = 640*direction;
+				//float x1 = curvePoint(flow.begin.x+offsetBegin, flow.begin.x, flow.end.x, flow.end.x+offsetEnd, t1); 
+				//float y1 = curvePoint(flow.begin.y+offsetBegin, flow.begin.y, flow.end.y, flow.end.y+offsetEnd, t1);
+				//float x2 = curvePoint(flow.begin.x+offsetBegin, flow.begin.x, flow.end.x, flow.end.x+offsetEnd, t2);
+				//float y2 = curvePoint(flow.begin.y+offsetBegin, flow.begin.y, flow.end.y, flow.end.y+offsetEnd, t2);
 				//int size = (int) (3+1-3*(i/(float)endValue)); 
+				
 				//ellipse(x1, y1, size, size);
 				//ellipse(x2, y2, size, size);
+				
 				line(x1, y1, x2, y2);
 			}
 		}
