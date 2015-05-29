@@ -60,7 +60,6 @@ public class Animation extends PApplet {
 		map = loadImage("data/ui/mapbox.light.world.1.png");
 		mercatorMap = new MercatorMap(width, height, lat2, lat1, lon1, lon2);
 		
-		
 		for (int year = startYear; year <= endYear; year++) {
 			table = loadTable("data/flows/lattes-flows-country-"+year+".csv", "header");
 			List<Flow> flowsByYear = new ArrayList<Flow>();
@@ -117,14 +116,18 @@ public class Animation extends PApplet {
 	}
 
 	void myCurve(Flow flow) {
-		float percentageTrip = flow.trips/(float)maxTripDiff;
-		int alfa = (int)((255*2/10)+(((255*8)/10)*percentageTrip));
-		int strokeSize = (int)((3*2/10)+(((3*8)/10)*percentageTrip));
-		stroke(255,0,0,alfa);
-		strokeWeight(strokeSize+1);
+//		float percentageTrip = flow.trips/(float)maxTripDiff;
+//		int alfa = (int)((255*2/10)+(((255*8)/10)*percentageTrip));
+//		int strokeSize = (int)((3*2/10)+(((3*8)/10)*percentageTrip));
+//		stroke(255,0,0,alfa);
+//		strokeWeight(strokeSize+1);
+		
+		stroke(255,0,0,30);
+		strokeWeight(1);
+		
 		if (increment == 1){
 			delay(1000);
-			resolution = sizeFlows*25;//30,50
+			resolution = sizeFlows*50;//25,30,50
 		}
 		int step = (int) (resolution*2);//3, 2, 0.8
 		if (increment<=resolution+step){
@@ -159,12 +162,18 @@ public class Animation extends PApplet {
 				//float y1 = curvePoint(flow.begin.y+offsetBegin, flow.begin.y, flow.end.y, flow.end.y+offsetEnd, t1);
 				//float x2 = curvePoint(flow.begin.x+offsetBegin, flow.begin.x, flow.end.x, flow.end.x+offsetEnd, t2);
 				//float y2 = curvePoint(flow.begin.y+offsetBegin, flow.begin.y, flow.end.y, flow.end.y+offsetEnd, t2);
+
 				//int size = (int) (3+1-3*(i/(float)endValue)); 
-				
 				//ellipse(x1, y1, size, size);
 				//ellipse(x2, y2, size, size);
 				
 				line(x1, y1, x2, y2);
+			}
+			if (increment<=resolution){
+			    float t1 = increment / (float)resolution;
+			    float x1 = curvePoint(flow.begin.x-30, flow.begin.x, flow.end.x, flow.end.x-30, t1);
+			    float y1 = curvePoint(flow.begin.y-30, flow.begin.y, flow.end.y, flow.end.y-30, t1);
+			    ellipse(x1, y1, 5, 5); 
 			}
 		}
 		if (increment == resolution+step){
