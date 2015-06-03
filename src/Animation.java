@@ -17,8 +17,8 @@ public class Animation extends PApplet {
 	float lon2 = (float) 180.0;
 	float lat2 = (float) 85.0;
 
-	int width = 1000;
-	int height = 1000;
+	int width = 1000;//1000
+	int height = 1000;//1000
 
 	MercatorMap mercatorMap;
 
@@ -26,7 +26,7 @@ public class Animation extends PApplet {
 	Map<Integer, List<Flow>> flows = new Hashtable<Integer, List<Flow>>();
 
 	int endYear = 2013;//2013
-	int startYear = 1990;//2000, 1990, 1960, 1980
+	int startYear = 2000;//2000, 1990, 1960, 1980
 	int currentYear = startYear;
 	int resolution = 0;
 	int sizeFlows = 0;
@@ -81,27 +81,31 @@ public class Animation extends PApplet {
 			float xc = (xo+xe)/2;
 			float yc = (yo+ye)/2;
 			float dx = Math.abs(xo-xe);
-			float dy = Math.abs(yo-ye);    
-			//		    print(dx,dy);
+			float dy = Math.abs(yo-ye);
+			float plusY = dist(this.source.x, this.source.y, this.target.x, this.target.y);//10,100
 
 			float ao, bo, ae, be, diff;
 
 			if(ye>yo){  
 				diff = (1/(float)2)*dx*(dy/height);
-				bo = Math.abs(xo-xc);
-				be = Math.abs(xo-xc)+Math.abs(yo-ye);
+				bo = Math.abs(xo-xc)+plusY;
+				be = Math.abs(xo-xc)+Math.abs(yo-ye)+plusY;
 				ao = Math.abs(xc-xo)-diff;
 				ae = Math.abs(xc-xe)+diff;
-				xc += diff;
+//				xc += diff;
 			} else {
 				diff = (1/(float)2)*dx*(dy/height);
-				bo = Math.abs(xo-xc)+Math.abs(yo-ye);
-				be = Math.abs(xo-xc);
+				bo = Math.abs(xo-xc)+Math.abs(yo-ye)+plusY;
+				be = Math.abs(xo-xc)+plusY;
 				ao = Math.abs(xc-xo)+diff;
 				ae = Math.abs(xc-xe)-diff;
-				xc -= diff;
+//				xc -= diff;
 			}
-
+//			ae = be;
+//			ao = bo;
+			float xMax=0;
+		    float xMin=height;
+		    
 //			stroke(0);
 			fill(0);
 //			strokeWeight(0.2);
@@ -110,27 +114,69 @@ public class Animation extends PApplet {
 //		    ellipse(xc, yc, 1, 1);
 			ellipse(xo, yo, 4, 4);
 			ellipse(xe, ye, 4, 4);
+			
+			//ellipse equation
+		    //x = a*cos(t)    
+		    //y = b*sin(t)
+		    
+		    float diffX = 0;
+		    ArrayList<float[]> points = new ArrayList<float[]>();
+		    float percentageSlant = ((width/2f)-xc)/(width/2f);
+		    int slant = 30;//30,70,120, 150
+		    slant = (int)(slant*percentageSlant);
 
 			for (float i = 0; i < 90; i++) {
 				float x1 = (float)(Math.cos(radians(i))*ao+xc);
 				float y1 = (float)(-Math.sin(radians(i))*bo+yo);
+				float xs1 = (float)(x1+Math.tan(radians(slant))*y1);
+				if(i == 0)
+					diffX = (float)(Math.tan(radians(slant))*y1);
+				xs1=diffX+xs1;
 				float x2 = (float)(Math.cos(radians(i+1))*ao+xc);
 				float y2 = (float)(-Math.sin(radians(i+1))*bo+yo);
-				line(x1,y1,x2,y2);
+				float xs2 = (float)(x2+Math.tan(radians(slant))*y2);
+				xs2=diffX+xs2;
+//			    if(xs1>xMax){
+				if(i == 0){
+			        xMax = xs1; 
+			    } 
+			    float[] point = {xs1,y1,xs2,y2};
+			    if(y1<=yo)
+			    	points.add(point);
 			}
 
 			for (float i = 90; i <= 180; i++) {
 				float x1 = (float)(Math.cos(radians(i))*ae+xc);
 				float y1 = (float)(-Math.sin(radians(i))*be+ye);
+				float xs1 = (float)(x1+Math.tan(radians(slant))*y1);
+			    if(i == 0)
+			        diffX = (float)(Math.tan(radians(slant))*y1);
+			    xs1=diffX+xs1;
 				float x2 = (float)(Math.cos(radians(i+1))*ae+xc);
 				float y2 = (float)(-Math.sin(radians(i+1))*be+ye);
-				line(x1,y1,x2,y2);
+				float xs2 = (float)(x2+Math.tan(radians(slant))*y2);
+				xs2=diffX+xs2;
+//			    if(xs1<xMin){
+			    if(i == 180-1){
+			        xMin = xs1; 
+			    }
+			    float[] point = {xs1,y1,xs2,y2};
+			    if(y1<=ye)
+			    	points.add(point);
 			}
+			
+		    float percentageScale = (xo-xe)/(xMax-xMin);
+		    float diffX2 = xo-points.get(0)[0]*percentageScale;
+		    for(float[] point: points){
+		    	//https://github.com/heygrady/transform/wiki/Calculating-2d-Matrices
+		    	//http://www.mathworks.com/help/images/performing-general-2-d-spatial-transformations.html
+		    	line(point[0]*percentageScale+diffX2,point[1],point[2]*percentageScale+diffX2,point[3]);
+		    }
 		}
 	}
 
 	public void setup() {
-		size( width, height, P3D );
+		size(width, height, P3D );
 
 //		map = loadImage("data/ui/mapbox.light.world.1.png");
 		map = loadImage("data/ui/mapbox.world.2.png");
@@ -170,11 +216,13 @@ public class Animation extends PApplet {
 			textSize(20);
 			fill(0, 102, 153, 204);
 			String content = "Year "+currentYear;
-			text(content, width/2-textWidth(content)/2, 45, 30);
+//			text(content, width/2-textWidth(content)/2, 45, 30);
+			text(content, 45, 45, 30);
 		}
 
 		scale((float) 0.75);
-		translate(100, 250);
+//		translate(100, 250);
+		translate(100, 100);
 		rotateX(radians(40));
 
 		image(map, 0 ,0);
@@ -203,7 +251,8 @@ public class Animation extends PApplet {
 //				noFill();
 				strokeWeight(1);
 				if(!exist){
-					stroke(255,0,0,50);//1,50
+//					stroke(255,0,0,50);//1,50
+					stroke(0, 102, 0, 50);
 					(new MyCurve(new PVector(flow.begin.x, flow.begin.y), new PVector(flow.end.x,flow.end.y))).show();
 				} else {
 					stroke(255,0,0,0);
