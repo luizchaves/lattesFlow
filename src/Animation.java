@@ -17,13 +17,14 @@ public class Animation extends PApplet {
 	float lon2 = (float) 180.0;
 	float lat2 = (float) 85.0;
 
-	int width = 1000;//1000
+	int width = 1025;//1000,1025
 	int height = 1000;//1000
 
 	MercatorMap mercatorMap;
 
 	Table table;
 	Map<Integer, List<Flow>> flows = new Hashtable<Integer, List<Flow>>();
+	Map<Integer, Map<String, Integer>> points = new Hashtable<Integer, Map<String, Integer>>();
 
 	int endYear = 2013;//2013
 	int startYear = 2000;//2000, 1990, 1960, 1980
@@ -35,7 +36,9 @@ public class Animation extends PApplet {
 	int maxTripDiff = 0;
 	int maxDist = 0;
 	int flag = 0;
-
+	
+	boolean rotateMap = true;
+	boolean cumulatePath = true;
 	boolean animating = true;
 
 	class Flow{
@@ -82,24 +85,35 @@ public class Animation extends PApplet {
 			float yc = (yo+ye)/2;
 			float dx = Math.abs(xo-xe);
 			float dy = Math.abs(yo-ye);
-			float plusY = dist(this.source.x, this.source.y, this.target.x, this.target.y);//10,100
+			float diffXY = dist(this.source.x, this.source.y, this.target.x, this.target.y)/2;
+			float diffY = Math.abs(yo-ye);
+			float diffXOC = Math.abs(xo-xc);
+			float diffYOC = Math.abs(yo-yc);
+			float diffXEC = Math.abs(xe-xc);
+			float diffYEC = Math.abs(ye-yc);
+			float plusY = diffXY+diffXOC;//10,100
+			
+			plusY = diffXY*3/4;
+//			plusY = diffXOC;	
 
 			float ao, bo, ae, be, diff;
 
 			if(ye>yo){  
 				diff = (1/(float)2)*dx*(dy/height);
-				bo = Math.abs(xo-xc)+plusY;
-				be = Math.abs(xo-xc)+Math.abs(yo-ye)+plusY;
-				ao = Math.abs(xc-xo)-diff;
-				ae = Math.abs(xc-xe)+diff;
-//				xc += diff;
+//				diff = 0;
+				bo = plusY;
+				be = diffY+plusY;
+				ao = diffXOC-diff;
+				ae = diffXOC+diff;
+				xc += diff;
 			} else {
 				diff = (1/(float)2)*dx*(dy/height);
-				bo = Math.abs(xo-xc)+Math.abs(yo-ye)+plusY;
-				be = Math.abs(xo-xc)+plusY;
-				ao = Math.abs(xc-xo)+diff;
-				ae = Math.abs(xc-xe)-diff;
-//				xc -= diff;
+//				diff = 0;
+				bo = diffY+plusY;
+				be = plusY;
+				ao = diffXOC+diff;
+				ae = diffXOC-diff;
+				xc -= diff;
 			}
 //			ae = be;
 //			ao = bo;
@@ -107,13 +121,12 @@ public class Animation extends PApplet {
 		    float xMin=height;
 		    
 //			stroke(0);
-			fill(0);
+//			fill(0);
 //			strokeWeight(0.2);
 //			strokeWeight(1);
-
 //		    ellipse(xc, yc, 1, 1);
-			ellipse(xo, yo, 4, 4);
-			ellipse(xe, ye, 4, 4);
+//			ellipse(xo, yo, 4, 4);
+//			ellipse(xe, ye, 4, 4);
 			
 			//ellipse equation
 		    //x = a*cos(t)    
@@ -122,14 +135,15 @@ public class Animation extends PApplet {
 		    float diffX = 0;
 		    ArrayList<float[]> points = new ArrayList<float[]>();
 		    float percentageSlant = ((width/2f)-xc)/(width/2f);
-		    int slant = 30;//30,70,120, 150
+		    int slant = 20;//20, 30,70,120, 150
 		    slant = (int)(slant*percentageSlant);
 
-			for (float i = 0; i < 90; i++) {
+		    int startDegree = 0;
+			for (float i = startDegree; i < 90; i++) {
 				float x1 = (float)(Math.cos(radians(i))*ao+xc);
 				float y1 = (float)(-Math.sin(radians(i))*bo+yo);
 				float xs1 = (float)(x1+Math.tan(radians(slant))*y1);
-				if(i == 0)
+				if(i == startDegree)
 					diffX = (float)(Math.tan(radians(slant))*y1);
 				xs1=diffX+xs1;
 				float x2 = (float)(Math.cos(radians(i+1))*ao+xc);
@@ -137,7 +151,7 @@ public class Animation extends PApplet {
 				float xs2 = (float)(x2+Math.tan(radians(slant))*y2);
 				xs2=diffX+xs2;
 //			    if(xs1>xMax){
-				if(i == 0){
+				if(i == startDegree){
 			        xMax = xs1; 
 			    } 
 			    float[] point = {xs1,y1,xs2,y2};
@@ -145,19 +159,20 @@ public class Animation extends PApplet {
 			    	points.add(point);
 			}
 
-			for (float i = 90; i <= 180; i++) {
+			int stopDegree = 180;
+			for (float i = 90; i <= stopDegree; i++) {
 				float x1 = (float)(Math.cos(radians(i))*ae+xc);
 				float y1 = (float)(-Math.sin(radians(i))*be+ye);
 				float xs1 = (float)(x1+Math.tan(radians(slant))*y1);
-			    if(i == 0)
-			        diffX = (float)(Math.tan(radians(slant))*y1);
+//			    if(i == stopDegree)
+//			        diffX = (float)(Math.tan(radians(slant))*y1);
 			    xs1=diffX+xs1;
 				float x2 = (float)(Math.cos(radians(i+1))*ae+xc);
 				float y2 = (float)(-Math.sin(radians(i+1))*be+ye);
 				float xs2 = (float)(x2+Math.tan(radians(slant))*y2);
 				xs2=diffX+xs2;
 //			    if(xs1<xMin){
-			    if(i == 180-1){
+			    if(i == stopDegree-1){
 			        xMin = xs1; 
 			    }
 			    float[] point = {xs1,y1,xs2,y2};
@@ -170,7 +185,12 @@ public class Animation extends PApplet {
 		    for(float[] point: points){
 		    	//https://github.com/heygrady/transform/wiki/Calculating-2d-Matrices
 		    	//http://www.mathworks.com/help/images/performing-general-2-d-spatial-transformations.html
+		    	pushMatrix();
+		    	strokeWeight(1);
+//		    	stroke(255,0,0,50);//1,50
+				stroke(0, 102, 0, 50);
 		    	line(point[0]*percentageScale+diffX2,point[1],point[2]*percentageScale+diffX2,point[3]);
+		    	popMatrix();
 		    }
 		}
 	}
@@ -178,13 +198,16 @@ public class Animation extends PApplet {
 	public void setup() {
 		size(width, height, P3D );
 
+		map = loadImage("data/ui/mapbox.streets.world.3.png");
 //		map = loadImage("data/ui/mapbox.light.world.1.png");
-		map = loadImage("data/ui/mapbox.world.2.png");
+//		map = loadImage("data/ui/mapbox.world.2.png");
+//		map = loadImage("data/ui/mapbox.comic.world.2.png");
 		mercatorMap = new MercatorMap(width, height, lat2, lat1, lon1, lon2);
 
 		for (int year = startYear; year <= endYear; year++) {
 			table = loadTable("data/flows/lattes-flows-country-"+year+".csv", "header");
 			List<Flow> flowsByYear = new ArrayList<Flow>();
+			Map<String, Integer> pointsByYear = new Hashtable<String, Integer>();
 			float x,y;
 			for (TableRow row : table.rows()) {
 				Flow flow = new Flow(
@@ -194,72 +217,91 @@ public class Animation extends PApplet {
 						row.getFloat("dY"),
 						row.getInt("trips")
 						);
-				if(!flow.equalPoint() && (row.getInt("trips") > maxTripDiff)){
-					maxTripDiff = row.getInt("trips");
-					if(flow.equalPoint() && row.getInt("trips") > maxTripSame)
-						maxTripSame = row.getInt("trips");
+				int trips = row.getInt("trips");
+				if(!flow.equalPoint() && (trips > maxTripDiff)){
+					maxTripDiff = trips;
+				}
+				if(flow.equalPoint() && trips > maxTripSame){
+					maxTripSame = trips;
 				}
 				if(maxDist<dist(flow.begin.x, flow.begin.y, flow.end.x, flow.end.y))
 					maxDist = (int)dist(flow.begin.x, flow.begin.y, flow.end.x, flow.end.y);
 				flowsByYear.add(flow);
+				
+				String key = flow.begin.x+","+flow.begin.y;
+				if(pointsByYear.containsKey(key)){
+					pointsByYear.put(key, pointsByYear.get(key)-trips);
+				}else{
+					pointsByYear.put(key, -trips);
+				}
+				
+				key = flow.end.x+","+flow.end.y;
+				if(pointsByYear.containsKey(key)){
+					pointsByYear.put(key, pointsByYear.get(key)+trips);
+				}else{
+					pointsByYear.put(key, trips);
+				}
 			}
 			flows.put(year, flowsByYear);
+			points.put(year, pointsByYear);
 		}
 //		println(maxTripSame+" "+maxTripDiff+" "+maxDist);
 	}
 
-	public void draw() {
-//		background(209,209,209);
-		background(241,239,241);
+	public void draw() { 
+//		background(209,209,209); //light.world
+		background(241,239,241); //world, streets.world
+//		background(0,71,109); //comic.world
 
 		if(currentYear <= endYear && animating){
+			pushMatrix();
 			textSize(20);
 			fill(0, 102, 153, 204);
 			String content = "Year "+currentYear;
 //			text(content, width/2-textWidth(content)/2, 45, 30);
 			text(content, 45, 45, 30);
+			popMatrix();
 		}
-
-		scale((float) 0.75);
-//		translate(100, 250);
-		translate(100, 100);
-		rotateX(radians(40));
+		if(rotateMap){
+			scale((float) 0.75);
+//			translate(100, 250);
+//			translate(100, 100);
+			translate(130, 100);
+			rotateX(radians(40));			
+		}
 
 		image(map, 0 ,0);
 
 		flag++;
 		if(animating){
+			pushMatrix();
+			translate(-32, 0);//mapbox.streets.world!!!
 			myCurve();
 //			myCurveStepByStep();
+			popMatrix();
 //			if(flag%3 == 0)
-//				saveFrame("data/frames/######.png");
+				saveFrame("data/frames/######.png");
 		}
 	}
 
 	void myCurve() {
-		Map<String, Integer> points = new Hashtable<String, Integer>();
+		Map<String, Integer> pointsExist = new Hashtable<String, Integer>();
 		for(int year = startYear; year<=currentYear; year++){
 			sizeFlows = 0;
 			for(Flow flow: flows.get(year)){
+				
 				sizeFlows += flows.get(year).size();
 
-				boolean exist = points.containsKey(flow.begin.x+","+flow.begin.y+","+flow.end.x+","+flow.end.y) ||
-						points.containsKey(flow.end.x+","+flow.end.y+","+flow.begin.x+","+flow.begin.y);
+				boolean exist = pointsExist.containsKey(flow.begin.x+","+flow.begin.y+","+flow.end.x+","+flow.end.y) ||
+						pointsExist.containsKey(flow.end.x+","+flow.end.y+","+flow.begin.x+","+flow.begin.y);
 				if(!exist)
-					points.put(flow.begin.x+","+flow.begin.y+","+flow.end.x+","+flow.end.y, 1);
-				
-//				noFill();
-				strokeWeight(1);
-				if(!exist){
-//					stroke(255,0,0,50);//1,50
-					stroke(0, 102, 0, 50);
+					pointsExist.put(flow.begin.x+","+flow.begin.y+","+flow.end.x+","+flow.end.y, 1);
+				if(!exist && cumulatePath){
 					(new MyCurve(new PVector(flow.begin.x, flow.begin.y), new PVector(flow.end.x,flow.end.y))).show();
-				} else {
-					stroke(255,0,0,0);
+				}	
+				if(year == currentYear && !cumulatePath){
+					(new MyCurve(new PVector(flow.begin.x, flow.begin.y), new PVector(flow.end.x,flow.end.y))).show();
 				}
-				
-				
-				
 
 				//curve
 //				int endValue = resolution;
@@ -292,14 +334,19 @@ public class Animation extends PApplet {
 					}
 					if (increment<=resolution){
 						increment++;
-						if (increment<=resolution){
-							float t1 = increment / (float)resolution;
-							float x1 = curvePoint(flow.begin.x-30, flow.begin.x, flow.end.x, flow.end.x-30, t1);
-							float y1 = curvePoint(flow.begin.y-30, flow.begin.y, flow.end.y, flow.end.y-30, t1);
+						
+						float t1 = increment / (float)resolution;
+						float x1 = curvePoint(flow.begin.x, flow.begin.x, flow.end.x, flow.end.x, t1);
+						float y1 = curvePoint(flow.begin.y, flow.begin.y, flow.end.y, flow.end.y, t1);
 
+//						if(t1>=0.1 && t1<=0.9){
+							pushMatrix();
+							stroke(0);
 							fill(0);
-							ellipse(x1, y1, 3, 3); 
-						}
+							ellipse(x1, y1, 3, 3);
+							popMatrix();
+//						}
+						
 					}
 					if (increment == resolution){
 						if(currentYear == endYear){
@@ -311,6 +358,19 @@ public class Animation extends PApplet {
 						increment = 0;
 					}
 				}
+				
+			}
+			for(String point: points.get(currentYear).keySet()){
+				pushMatrix();
+				if(points.get(currentYear).get(point)<0){
+					stroke(255,0,0);
+					fill(255,0,0);
+				}else{
+					stroke(0,0,255);
+					fill(0,0,255);
+				}
+				ellipse(Float.parseFloat(point.split(",")[0]),Float.parseFloat(point.split(",")[1]),10,10);
+				popMatrix();
 			}
 		}
 	}
