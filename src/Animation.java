@@ -27,7 +27,7 @@ public class Animation extends PApplet {
 	Map<Integer, Map<String, Integer>> points = new Hashtable<Integer, Map<String, Integer>>();
 
 	int endYear = 2013;//2013
-	int startYear = 2000;//2000, 1990, 1960, 1980
+	int startYear = 1990;//2000, 1990, 1960, 1980
 	int currentYear = startYear;
 	int resolution = 0;
 	int sizeFlows = 0;
@@ -37,9 +37,11 @@ public class Animation extends PApplet {
 	int maxDist = 0;
 	int flag = 0;
 	
-	boolean rotateMap = true;
+	boolean rotateMap = false;
 	boolean cumulatePath = true;
 	boolean animating = true;
+	boolean drawFlows = false;
+	String kindLocation = "city";//city,state,country
 
 	class Flow{
 		public PVector begin;
@@ -188,7 +190,8 @@ public class Animation extends PApplet {
 		    	pushMatrix();
 		    	strokeWeight(1);
 //		    	stroke(255,0,0,50);//1,50
-				stroke(0, 102, 0, 50);
+//				stroke(0, 102, 0, 50);
+		    	stroke(186,148,110,20);
 		    	line(point[0]*percentageScale+diffX2,point[1],point[2]*percentageScale+diffX2,point[3]);
 		    	popMatrix();
 		    }
@@ -205,7 +208,7 @@ public class Animation extends PApplet {
 		mercatorMap = new MercatorMap(width, height, lat2, lat1, lon1, lon2);
 
 		for (int year = startYear; year <= endYear; year++) {
-			table = loadTable("data/flows/lattes-flows-country-"+year+".csv", "header");
+			table = loadTable("data/flows/"+kindLocation+"/lattes-flows-"+kindLocation+"-"+year+".csv", "header");
 			List<Flow> flowsByYear = new ArrayList<Flow>();
 			Map<String, Integer> pointsByYear = new Hashtable<String, Integer>();
 			float x,y;
@@ -280,7 +283,7 @@ public class Animation extends PApplet {
 //			myCurveStepByStep();
 			popMatrix();
 //			if(flag%3 == 0)
-				saveFrame("data/frames/######.png");
+//				saveFrame("data/frames/######.png");
 		}
 	}
 
@@ -291,16 +294,17 @@ public class Animation extends PApplet {
 			for(Flow flow: flows.get(year)){
 				
 				sizeFlows += flows.get(year).size();
-
-				boolean exist = pointsExist.containsKey(flow.begin.x+","+flow.begin.y+","+flow.end.x+","+flow.end.y) ||
-						pointsExist.containsKey(flow.end.x+","+flow.end.y+","+flow.begin.x+","+flow.begin.y);
-				if(!exist)
-					pointsExist.put(flow.begin.x+","+flow.begin.y+","+flow.end.x+","+flow.end.y, 1);
-				if(!exist && cumulatePath){
-					(new MyCurve(new PVector(flow.begin.x, flow.begin.y), new PVector(flow.end.x,flow.end.y))).show();
-				}	
-				if(year == currentYear && !cumulatePath){
-					(new MyCurve(new PVector(flow.begin.x, flow.begin.y), new PVector(flow.end.x,flow.end.y))).show();
+				if(drawFlows){
+					boolean exist = pointsExist.containsKey(flow.begin.x+","+flow.begin.y+","+flow.end.x+","+flow.end.y) ||
+							pointsExist.containsKey(flow.end.x+","+flow.end.y+","+flow.begin.x+","+flow.begin.y);
+					if(!exist)
+						pointsExist.put(flow.begin.x+","+flow.begin.y+","+flow.end.x+","+flow.end.y, 1);
+					if(!exist && cumulatePath){
+						(new MyCurve(new PVector(flow.begin.x, flow.begin.y), new PVector(flow.end.x,flow.end.y))).show();
+					}	
+					if(year == currentYear && !cumulatePath){
+						(new MyCurve(new PVector(flow.begin.x, flow.begin.y), new PVector(flow.end.x,flow.end.y))).show();
+					}
 				}
 
 				//curve
@@ -339,13 +343,11 @@ public class Animation extends PApplet {
 						float x1 = curvePoint(flow.begin.x, flow.begin.x, flow.end.x, flow.end.x, t1);
 						float y1 = curvePoint(flow.begin.y, flow.begin.y, flow.end.y, flow.end.y, t1);
 
-//						if(t1>=0.1 && t1<=0.9){
-							pushMatrix();
-							stroke(0);
-							fill(0);
-							ellipse(x1, y1, 3, 3);
-							popMatrix();
-//						}
+						pushMatrix();
+						stroke(0);
+						fill(0);
+						ellipse(x1, y1, 1, 1);
+						popMatrix();
 						
 					}
 					if (increment == resolution){
@@ -369,7 +371,7 @@ public class Animation extends PApplet {
 					stroke(0,0,255);
 					fill(0,0,255);
 				}
-				ellipse(Float.parseFloat(point.split(",")[0]),Float.parseFloat(point.split(",")[1]),10,10);
+				ellipse(Float.parseFloat(point.split(",")[0]),Float.parseFloat(point.split(",")[1]),2,2);
 				popMatrix();
 			}
 		}
