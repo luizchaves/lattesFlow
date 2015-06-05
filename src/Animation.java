@@ -17,25 +17,27 @@ public class Animation extends PApplet {
 	String mapFile;
 	MercatorMap mercatorMap;
 
-	Table table;
-	String kindLocation = "city";//city,state,country
+	Table tableFlows;
+	String kindLocation = "city-all";//city-all,city,state,country
+	Map<String, String> nodes = new Hashtable<String, String>();
 	Map<Integer, List<Flow>> flows = new Hashtable<Integer, List<Flow>>();
 	Map<Integer, Map<String, Integer>> points = new Hashtable<Integer, Map<String, Integer>>();
 
 	int endYear = 2013;//2013
-	int startYear = 1990;//2000, 1990, 1960, 1980
+	int startYear = 2000;//2010, 2000, 1990, 1980, 1960
 	int currentYear = startYear;
 	
 	int increment = 0;
 	int flagSaveFrame = 0;
 	int resolution = 0;
 
-	boolean rotateMap = true;
-	boolean cumulatePath = true;
+	boolean rotateMap = false;
+	boolean cumulatePath = false;
 	boolean animating = true;
 	boolean drawFlows = true;
 	boolean drawPoints = true;
 	boolean drawNodes = true;
+	boolean focusBrazil = true;
 
 	public void setup() {
 		size(width, height, P3D );
@@ -48,14 +50,14 @@ public class Animation extends PApplet {
 		map = loadImage("data/ui/"+mapFile);
 				
 		mercatorMap = new MercatorMap(width, height, 85, -85, -180, 180);
-
+		
 		for (int year = startYear; year <= endYear; year++) {
-			table = loadTable("data/flows/"+kindLocation+"/lattes-flows-"+kindLocation+"-"+year+".csv", "header");
+			tableFlows = loadTable("data/flows/"+kindLocation+"/lattes-flows-"+kindLocation+"-"+year+".csv", "header");
 			
 			List<Flow> flowsByYear = new ArrayList<Flow>();
 			Map<String, Integer> pointsByYear = new Hashtable<String, Integer>();
 			
-			for (TableRow row : table.rows()) {
+			for (TableRow row: tableFlows.rows()) {
 				Flow flow = new Flow(
 					row.getFloat("oX"),
 					row.getFloat("oY"),
@@ -65,10 +67,13 @@ public class Animation extends PApplet {
 					mercatorMap,
 					this
 				);
-				int trips = row.getInt("trips");
 				
-				flowsByYear.add(flow);
-
+				if(row.getString("cO").equals("brazil") && row.getString("cD").equals("brazil") && focusBrazil)
+					flowsByYear.add(flow);
+				if(!focusBrazil)
+					flowsByYear.add(flow);
+				
+				int trips = row.getInt("trips");
 				String key = flow.idBegin();
 				if(pointsByYear.containsKey(key)){
 					pointsByYear.put(key, pointsByYear.get(key)-trips);
@@ -94,33 +99,37 @@ public class Animation extends PApplet {
 		//comic.world - (0,71,109)
 		background(241,239,241); 
 
-		if(currentYear <= endYear && animating){
-			pushMatrix();
-			textSize(20);
-			fill(0, 102, 153, 204);
-			String content = "Year "+currentYear;
-			text(content, 45, 45, 30);// width/2-textWidth(content)/2, 45
-			popMatrix();
+		pushMatrix();
+		if(focusBrazil){
+			scale(4f);
+			translate(-200, -400);
 		}
-
 		if(rotateMap){
-			scale((float) 0.75);
+			scale(0.75f);
 			//translate(100, 250);
 			//translate(100, 100);
 			translate(130, 100);
 			rotateX(radians(40));			
 		}
-
 		image(map, 0 ,0);
-		
 		if(animating){
-			pushMatrix();
 			if(mapFile == "mapbox.streets.world.3.png")
 				translate(-32, 0);
 			drawFlows();
 			//drawFlowsStepByStep();
+		}
+		popMatrix();
+		
+		if(animating){
+			String content = "Year "+currentYear;
+			pushMatrix();
+			textSize(20);
+			stroke(255,255,255);
+			fill(255);
+			rect(20, 5, textWidth(content)+25, 35);
+			fill(0, 102, 153, 204);
+			text(content, 45, 45, 30);// width/2-textWidth(content)/2, 45
 			popMatrix();
-			
 			//flagSaveFrame++;
 			//if(flagSaveFrame%3 == 0)
 				saveFrame("data/frames/######.png");
@@ -162,7 +171,10 @@ public class Animation extends PApplet {
 					if (increment<=resolution){
 						increment++;
 						if(drawPoints)
-							flow.drawPointsFlow(increment/(float)resolution);
+							if(focusBrazil)
+								flow.drawPointsFlow(increment/(float)resolution, 0.1f);
+							else
+								flow.drawPointsFlow(increment/(float)resolution, 1);
 					}
 					if (increment == resolution){
 						if(currentYear == endYear){
@@ -188,7 +200,10 @@ public class Animation extends PApplet {
 						stroke(0,0,255);
 						fill(0,0,255);
 					}
-					ellipse(Float.parseFloat(point.split(",")[0]),Float.parseFloat(point.split(",")[1]),2,2);
+					if(focusBrazil)
+						ellipse(Float.parseFloat(point.split(",")[0]),Float.parseFloat(point.split(",")[1]),0.1f,0.1f);
+					else
+						ellipse(Float.parseFloat(point.split(",")[0]),Float.parseFloat(point.split(",")[1]),2,2);
 					popMatrix();
 				}
 			}
@@ -216,8 +231,11 @@ public class Animation extends PApplet {
 			}
 			
 			//points
-			if (increment<=resolution && drawPoints){
-				flow.drawPointsFlow(increment/(float)resolution); 
+			if (increment<=resolution && drawPoints){ 
+				if(focusBrazil)
+					flow.drawPointsFlow(increment/(float)resolution, 0.1f);
+				else
+					flow.drawPointsFlow(increment/(float)resolution, 1);
 			}
 			
 			if (increment == resolution+step){

@@ -53,18 +53,20 @@ public class Flow {
 		return pApplet.dist(this.begin.x, this.begin.y, this.end.x, this.end.y);
 	}
 
-	public void drawPointsFlow(float instant) {
+	public void drawPointsFlow(float instant, float size) {
 		float x = pApplet.curvePoint(this.begin.x, this.begin.x, this.end.x, this.end.x, instant);
 		float y = pApplet.curvePoint(this.begin.y, this.begin.y, this.end.y, this.end.y, instant);
 
 		pApplet.pushMatrix();
 		pApplet.stroke(0);
 		pApplet.fill(0);
-		pApplet.ellipse(x, y, 1, 1);
+		pApplet.ellipse(x, y, size, size);
 		pApplet.popMatrix();
 	}
 
 	public void drawCurve(int resolution) {
+		boolean greatCircle = false;
+		
 		int endValue = resolution;
 		float percentageDist = this.distance()/(float)MAX_DIST;
 		percentageDist = (float) Math.pow(percentageDist, 2);
@@ -72,22 +74,30 @@ public class Flow {
 		int direction = ((this.begin.x > this.end.x) && (this.begin.y < this.end.y)) ||
 				((this.begin.x < this.end.x) && (this.begin.y > this.end.y)) ?
 						+1/3 : -1/3;
-		int offsetYBegin = dist;
-		int offsetYEnd = dist;
-		int offsetXBegin = 500*direction;
-		int offsetXEnd = 500*direction;
+		
+		int offsetYBegin, offsetYEnd, offsetXBegin, offsetXEnd;
+		
+		if(!greatCircle){
+			offsetYBegin = dist;
+			offsetYEnd = dist;
+			offsetXBegin = 500*direction;
+			offsetXEnd = 500*direction;
+		}else{
+			direction = (this.begin.x > this.end.x) ? -1 : 1;
+			offsetYBegin = offsetYEnd = offsetXBegin = offsetXEnd = -120*direction;//-140
+		}
 
 		for (int i=0; i<endValue;i++){
 			float t1 = i /(float)resolution;
 			float t2 = (i+1)/(float)resolution;
 
-			float x1 = pApplet.curvePoint(this.begin.x+offsetXBegin, this.begin.x, this.end.x, this.end.x+offsetXEnd, t1); 
-			float y1 = pApplet.curvePoint(this.begin.y+offsetYBegin, this.begin.y, this.end.y, this.end.y+offsetYEnd, t1);
-			float x2 = pApplet.curvePoint(this.begin.x+offsetXBegin, this.begin.x, this.end.x, this.end.x+offsetXEnd, t2);
-			float y2 = pApplet.curvePoint(this.begin.y+offsetYBegin, this.begin.y, this.end.y, this.end.y+offsetYEnd, t2);
+			float x1 = pApplet.curvePoint(offsetXBegin+this.begin.x, this.begin.x, this.end.x, offsetXEnd+this.end.x, t1); 
+			float y1 = pApplet.curvePoint(offsetYBegin+this.begin.y, this.begin.y, this.end.y, offsetYEnd+this.end.y, t1);
+			float x2 = pApplet.curvePoint(offsetXBegin+this.begin.x, this.begin.x, this.end.x, offsetXEnd+this.end.x, t2);
+			float y2 = pApplet.curvePoint(offsetYBegin+this.begin.y, this.begin.y, this.end.y, offsetYEnd+this.end.y, t2);
 
 			pApplet.pushMatrix();
-			pApplet.stroke(255,0,0,50);
+			pApplet.stroke(255,0,0,30);
 			pApplet.strokeWeight(1);
 			pApplet.line(x1, y1, x2, y2);
 			pApplet.popMatrix();
@@ -95,6 +105,8 @@ public class Flow {
 	}
 
 	public void drawCurveAnimated(int endValue, int startValue, int resolution) {
+		boolean greatCircle = false;
+		
 		float percentageTrip = this.trips/(float)MAX_TRIP_DIFF;
 		float percentageDist = this.distance()/(float)MAX_DIST;
 		percentageDist = (float) Math.pow(percentageDist, 2);
@@ -102,35 +114,42 @@ public class Flow {
 		int dist = (int)((5000/20)+(((5000*19)/10)*percentageDist));
 		int alfa = (int)((255*2/10)+(((255*8)/10)*percentageTrip));
 		int strokeSize = (int)((3*2/10)+(((3*8)/10)*percentageTrip));
-		int direction = ((this.begin.x > this.end.x) && (this.begin.y < this.end.y)) ||
-				((this.begin.x < this.end.x) && (this.begin.y > this.end.y)) ?
-						+1/3 : -1/3;
 		
-		int offsetBegin = dist;
-		int offsetEnd = dist;
-		int offsetXBegin = 500*direction;
-		int offsetYBegin = 500*direction;
-
+		int direction, offsetBegin, offsetEnd, offsetXBegin = 0, offsetYBegin = 0;
+		if(!greatCircle){
+			direction = ((this.begin.x > this.end.x) && (this.begin.y < this.end.y)) ||
+					((this.begin.x < this.end.x) && (this.begin.y > this.end.y)) ?
+							+1/3 : -1/3;
+			//-640,0,0,-640 -140,0,0,-40 x 2
+			offsetXBegin = 500*direction;
+			offsetBegin = dist;
+			offsetYBegin = 500*direction;
+			offsetEnd = dist;
+		}else{
+			//-640,0,0,-640x4; -40,0,0,-40x4; -140,0,0,-40x4; -140,0,0,-140x4
+			direction = (this.begin.x > this.end.x) ? -1 : 1;
+			offsetBegin = 140*direction;
+			offsetEnd = 140*direction;
+		}
+		
 		for (int i=startValue; i<endValue;i++){ //0..endValue
+			float x1, x2, y1, y2;
 			float t1 = i / (float)resolution;
 			float t2 = (i+1)/ (float)resolution;
 			
-			float x1 = pApplet.curvePoint(this.begin.x+offsetXBegin, this.begin.x, this.end.x, this.end.x+offsetYBegin, t1); 
-			float y1 = pApplet.curvePoint(this.begin.y+offsetBegin, this.begin.y, this.end.y, this.end.y+offsetEnd, t1);
-			float x2 = pApplet.curvePoint(this.begin.x+offsetXBegin, this.begin.x, this.end.x, this.end.x+offsetYBegin, t2);
-			float y2 = pApplet.curvePoint(this.begin.y+offsetBegin, this.begin.y, this.end.y, this.end.y+offsetEnd, t2);
-
-			//-640,0,0,-640 -140,0,0,-40 x 2 / -40,0,0,-40x4 / -140,0,0,-40x4 / -140,0,0,-140x4
-			//int direction = (this.begin.x > this.end.x) ? -1 : 1;
-			//int offsetBegin = 640*direction;
-			//int offsetEnd = 640*direction;
+			if(!greatCircle){
+				x1 = pApplet.curvePoint(offsetXBegin+this.begin.x, this.begin.x, this.end.x, offsetYBegin+this.end.x, t1); 
+				y1 = pApplet.curvePoint(offsetBegin+this.begin.y, this.begin.y, this.end.y, offsetEnd+this.end.y, t1);
+				x2 = pApplet.curvePoint(offsetXBegin+this.begin.x, this.begin.x, this.end.x, offsetYBegin+this.end.x, t2);
+				y2 = pApplet.curvePoint(offsetBegin+this.begin.y, this.begin.y, this.end.y, offsetEnd+this.end.y, t2);
+			}else{	
+				x1 = pApplet.curvePoint(offsetBegin+this.begin.x, this.begin.x, this.end.x, offsetEnd+this.end.x, t1); 
+				y1 = pApplet.curvePoint(offsetBegin+this.begin.y, this.begin.y, this.end.y, offsetEnd+this.end.y, t1);
+				x2 = pApplet.curvePoint(offsetBegin+this.begin.x, this.begin.x, this.end.x, offsetEnd+this.end.x, t2);
+				y2 = pApplet.curvePoint(offsetBegin+this.begin.y, this.begin.y, this.end.y, offsetEnd+this.end.y, t2);
+			}
 			
-			//float x1 = pApplet.curvePoint(this.begin.x+offsetBegin, this.begin.x, this.end.x, this.end.x+offsetEnd, t1); 
-			//float y1 = pApplet.curvePoint(this.begin.y+offsetBegin, this.begin.y, this.end.y, this.end.y+offsetEnd, t1);
-			//float x2 = pApplet.curvePoint(this.begin.x+offsetBegin, this.begin.x, this.end.x, this.end.x+offsetEnd, t2);
-			//float y2 = pApplet.curvePoint(this.begin.y+offsetBegin, this.begin.y, this.end.y, this.end.y+offsetEnd, t2);
-
-			//int size = (int) (3+1-3*(i/(float)endValue)); 
+			//int size = (int) (2+1-3*(i/(float)endValue)); 
 			//pApplet.ellipse(x1, y1, size, size);
 			//pApplet.ellipse(x2, y2, size, size);
 			
@@ -180,7 +199,8 @@ public class Flow {
 		float diffYOC = Math.abs(yo-yc);
 		float plusY = diffXY+diffXOC;//10,100
 
-		plusY = (diffXY*3/4)/2;
+		plusY = diffXY*3/4;
+		//plusY = (diffXY*3/4)/2;
 		//plusY = diffXOC;	
 
 		float ao, bo, ae, be, diff;
@@ -219,6 +239,8 @@ public class Flow {
 		ArrayList<float[]> points = new ArrayList<float[]>();
 		float percentageSlant = ((width/2f)-xc)/(width/2f);
 		int slant = 20;//20, 30,70,120, 150
+		if(diffXOC<40)
+			slant = 0;
 		slant = (int)(slant*percentageSlant);
 
 		//ellipse equation

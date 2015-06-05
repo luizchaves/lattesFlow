@@ -20,7 +20,9 @@
 
 echo 'making video...'
 rm *.png
-convert -crop +1-500 '../../bin/data/frames/*.png' image%05d.png
+#convert -crop +1-500 '../../bin/data/frames/*.png' image%05d.png #rotated
+#convert -crop +1-250 '../../bin/data/frames/*.png' image%05d.png #plain
+convert -crop +1-0 '../../bin/data/frames/*.png' image%05d.png # focusBrazil
 # convert -crop +0-500 -contrast -contrast '../../../bin/data/frames/*.png' image%05d.png
 rm image00000.png image00001.png
 cp image00002.png image00000.png

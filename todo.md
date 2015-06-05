@@ -1,11 +1,13 @@
 - vizualizar melhor os fluxos no Brasil, supostamente ocultando os fluxos externos
 - tratar loops
+- remover ellipse super inclinadas
+- flow test (poucos fluxos)
+- melhorar curvas (slanted ellipse in slanted points, centered skewx) 
 - fluxos dos pontos menos intercarlado, ou seja, dispara pontos ano a ano de forma menos gradual
 - gerar fluxos a partir de todos os fluxos na vida de um doutor
-- melhorar curvas (slanted ellipse in slanted points, centered skewx) 
-- flow test (poucos fluxos)
+- path great circle
 
-color
+cor
 http://hex.colorrrs.com/
 http://flatuicolors.com/
 http://colourco.de/
