@@ -12,6 +12,12 @@
 # convert -despeckle -normalize image.png image_enhanced.png
 # convert image.png -contrast -contrast -contrast -contrast image_enhanced.png
 
+## Video generation
+# https://trac.ffmpeg.org/wiki/Create%20a%20video%20slideshow%20from%20images
+# ffmpeg -framerate 10 -pattern_type glob -i '*.png' -c:v libx264 -r 30 -pix_fmt yuv420p out.mp4
+# ffmpeg -framerate 50 -i %06d.tif -c:v libx264 -r 30 -pix_fmt yuv420p out.mp4
+# ffmpeg -framerate 1 -pattern_type glob -i '*.png' -c:v libx264 out.mp4
+
 echo 'making video...'
 rm *.png
 convert -crop +1-500 '../../bin/data/frames/*.png' image%05d.png
@@ -22,3 +28,4 @@ cp image00002.png image00001.png
 rm ../../bin/data/frames/*.png
 rm out.mp4
 ffmpeg -framerate 10 -pattern_type glob -i '*.png' -c:v libx264 -r 30 -pix_fmt yuv420p out.mp4
+rm *.png
