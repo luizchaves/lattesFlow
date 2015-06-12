@@ -34,12 +34,15 @@ public class Animation extends PApplet {
 	boolean rotateMap = false;
 	boolean cumulatePath = false;
 	boolean animating = true;
-	boolean drawFlows = true;
+	boolean drawFlows = false;
 	boolean drawPoints = true;
 	boolean drawNodes = true;
 	boolean focusBrazil = true;
 
 	public void setup() {
+		if(focusBrazil)
+			rotateMap = false;
+		
 		size(width, height, P3D );
 
 		//"mapbox.streets.world.3.png"
@@ -68,25 +71,43 @@ public class Animation extends PApplet {
 					this
 				);
 				
-				if(row.getString("cO").equals("brazil") && row.getString("cD").equals("brazil") && focusBrazil)
+				if(row.getString("cO").equals("brazil") && row.getString("cD").equals("brazil") && focusBrazil){
 					flowsByYear.add(flow);
-				if(!focusBrazil)
-					flowsByYear.add(flow);
-				
-				int trips = row.getInt("trips");
-				String key = flow.idBegin();
-				if(pointsByYear.containsKey(key)){
-					pointsByYear.put(key, pointsByYear.get(key)-trips);
-				}else{
-					pointsByYear.put(key, -trips);
-				}
+					
+					int trips = row.getInt("trips");
+					String key = flow.idBegin();
+					if(pointsByYear.containsKey(key)){
+						pointsByYear.put(key, pointsByYear.get(key)-trips);
+					}else{
+						pointsByYear.put(key, -trips);
+					}
 
-				key = flow.idEnd();
-				if(pointsByYear.containsKey(key)){
-					pointsByYear.put(key, pointsByYear.get(key)+trips);
-				}else{
-					pointsByYear.put(key, trips);
+					key = flow.idEnd();
+					if(pointsByYear.containsKey(key)){
+						pointsByYear.put(key, pointsByYear.get(key)+trips);
+					}else{
+						pointsByYear.put(key, trips);
+					}
+				}if(!focusBrazil){
+					flowsByYear.add(flow);
+					
+					int trips = row.getInt("trips");
+					String key = flow.idBegin();
+					if(pointsByYear.containsKey(key)){
+						pointsByYear.put(key, pointsByYear.get(key)-trips);
+					}else{
+						pointsByYear.put(key, -trips);
+					}
+
+					key = flow.idEnd();
+					if(pointsByYear.containsKey(key)){
+						pointsByYear.put(key, pointsByYear.get(key)+trips);
+					}else{
+						pointsByYear.put(key, trips);
+					}
 				}
+				
+				
 			}
 			flows.put(year, flowsByYear);
 			points.put(year, pointsByYear);
@@ -165,7 +186,7 @@ public class Animation extends PApplet {
 				//points
 				if(year == currentYear){
 					if (increment == 1){
-						//delay(1000);
+						delay(1000);
 						resolution = sizeFlows*10;
 					}
 					if (increment<=resolution){
